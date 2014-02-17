@@ -3,20 +3,18 @@ import win32gui
 import win32con
 import time
 import subprocess
-import random
+from util import transpose, draw
 import art
-from util import transpose, draw, add_border
 
 
-PIPE_HEIGHT = 50    # lines of text
-PIPE_WIDTH = 4      # characters
-PIPE_SPACING = 33   # characters
-GAP_PERCENT = 0.22  # percentage of pipe height
-SCREEN_WIDTH = 80   # characters
-START_SPACE = 42    # characters
-GRAVITY_ACCEL = -66
-JUMP_ACCEL = 32
-MAX_JUMP_VEL = 40
+PIPE_HEIGHT = 50
+PIPE_SPACING = 35
+PIPE_GAP = 11
+SCREEN_WIDTH = 80
+START_SPACE = 47
+GRAVITY_ACCEL = -160
+JUMP_ACCEL = 50
+MAX_JUMP_VEL = 70
 NUM_PIPES = 9999
 
 
@@ -59,28 +57,14 @@ win32gui.SetWindowPos(notepad, None, win_x, win_y, win_width, win_height, 0)
 # notepad's text area is the first child of the window
 text_area = win32gui.FindWindowEx(notepad, None, None, None)
 
-text = 'Hello Flappy World!'
-set_text(text_area, text)
-
 
 # level data is generated transposed, then transposed again for rendering
-
-def pipe(gap_perc, pipe_width, pipe_height):
-    top_perc = random.random() * (1 - gap_perc)
-    bot_perc = (1 - top_perc - gap_perc)
-    top = int(round(top_perc * pipe_height))
-    gap = int(round(gap_perc * pipe_height))
-    bot = int(round(bot_perc * pipe_height))
-    column = ('X' * top) + (' ' * gap) + ('X' * bot)
-    assert len(column) == pipe_height, (len(column), pipe_height)
-    return [column] * pipe_width
-
 
 empty = ' ' * PIPE_HEIGHT
 
 
 def pipe_and_space():
-    return pipe(GAP_PERCENT, PIPE_WIDTH, PIPE_HEIGHT) + [empty] * PIPE_SPACING
+    return transpose(art.pipes(PIPE_GAP, PIPE_HEIGHT)) + [empty] * PIPE_SPACING
 
 
 level = [empty] * START_SPACE + [el for _ in range(NUM_PIPES)
@@ -112,10 +96,10 @@ while not game_over:  # game loop
     bird_pos_y_int = int(round(bird_pos_y))
 
     # check if bird hit ground or ceiling
-    if bird_pos_y_int >= PIPE_HEIGHT or bird_pos_y_int <= 0:
+    if bird_pos_y_int >= PIPE_HEIGHT - 2 or bird_pos_y_int <= 0:
         print 'Game Over! (out of bounds)'
         game_over = True
-        bird_pos_y_int = min(PIPE_HEIGHT - 1, max(0, bird_pos_y_int))
+        bird_pos_y_int = min(PIPE_HEIGHT - 2, max(0, bird_pos_y_int))
 
 
     # take part of the level to display
@@ -136,13 +120,14 @@ while not game_over:  # game loop
 
     # display score
     cur_segment = max(
-        0, (cur_screen_pos - START_SPACE) / (PIPE_WIDTH + PIPE_SPACING) + 1)
+        0,
+        (cur_screen_pos - START_SPACE) / (art.PIPE_WIDTH + PIPE_SPACING) + 1
+    )
     if cur_segment != score:
         score = cur_segment
         print score
-    score_text = add_border('Score: {}'.format(str(score).zfill(4)))
-    draw(transposed, score_text,
-         SCREEN_WIDTH - len(score_text[0]) - 5, 2, False)
+    score_text = art.score(score)
+    draw(transposed, score_text, (SCREEN_WIDTH - len(score_text[0])) / 2, 2)
 
     # render to notepad
     data = '\r\n'.join(''.join(row) for row in transposed)
