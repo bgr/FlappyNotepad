@@ -91,8 +91,8 @@ digits = [
 ]
 
 
-ground = [
-    ',,,,',
+ground_segment = [
+    '----',
     '    ',
     '//  ',
     '====',
@@ -156,3 +156,10 @@ from util import transpose
 def score(num):
     digs = [transpose(digits[int(d)]) for d in str(num)]
     return transpose([col for dig in digs for col in dig])
+
+
+def ground(length):
+    one = transpose(ground_segment)
+    many = one * (length / len(one) + 1)
+    assert len(many) >= length
+    return transpose(many[:length])

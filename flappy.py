@@ -11,11 +11,12 @@ PIPE_HEIGHT = 50
 PIPE_SPACING = 35
 PIPE_GAP = 11
 SCREEN_WIDTH = 80
+SCREEN_HEIGHT = PIPE_HEIGHT + 10
 START_SPACE = 47
 GRAVITY_ACCEL = -160
 JUMP_ACCEL = 50
 MAX_JUMP_VEL = 70
-NUM_PIPES = 9999
+NUM_PIPES = 200
 
 
 process = subprocess.Popen('Notepad.exe')
@@ -49,7 +50,7 @@ win32gui.ShowWindow(notepad, win32con.SW_SHOWNORMAL)
 monitor_width = win32api.GetSystemMetrics(0)
 monitor_height = win32api.GetSystemMetrics(1)
 win_width = SCREEN_WIDTH * 8 + 30
-win_height = PIPE_HEIGHT * 14 + 40
+win_height = SCREEN_HEIGHT * 14 + 40
 win_x = (monitor_width - win_width) / 2
 win_y = (monitor_height - win_height) / 2
 win32gui.SetWindowPos(notepad, None, win_x, win_y, win_width, win_height, 0)
@@ -69,6 +70,7 @@ def pipe_and_space():
 
 level = [empty] * START_SPACE + [el for _ in range(NUM_PIPES)
                                  for el in pipe_and_space()]
+level = transpose(transpose(level) + art.ground(len(level)))
 cur_screen_pos = 0
 can_jump = True
 bird_pos_x = 4
