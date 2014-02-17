@@ -11,12 +11,13 @@ PIPE_HEIGHT = 50
 PIPE_SPACING = 35
 PIPE_GAP = 11
 SCREEN_WIDTH = 80
-SCREEN_HEIGHT = PIPE_HEIGHT + 10
+SCREEN_HEIGHT = PIPE_HEIGHT + 8
 START_SPACE = 47
-GRAVITY_ACCEL = -160
+GRAVITY_ACCEL = -140
 JUMP_ACCEL = 50
-MAX_JUMP_VEL = 70
+MAX_JUMP_VEL = 72
 NUM_PIPES = 200
+DT = 0.033
 
 
 process = subprocess.Popen('Notepad.exe')
@@ -68,32 +69,42 @@ def pipe_and_space():
     return transpose(art.pipes(PIPE_GAP, PIPE_HEIGHT)) + [empty] * PIPE_SPACING
 
 
-level = [empty] * START_SPACE + [el for _ in range(NUM_PIPES)
-                                 for el in pipe_and_space()]
-level = transpose(transpose(level) + art.ground(len(level)))
-cur_screen_pos = 0
-can_jump = True
-bird_pos_x = 4
-bird_pos_y = round(PIPE_HEIGHT / 2)
-bird_vel = 0
-dt = 0.033
-score = 0
-game_over = False
-bird_anim_frame = 0
+level = cur_screen_pos = can_jump = bird_pos_x = bird_pos_y = bird_vel =\
+    score = game_over = bird_anim_frame = None
 
 
-while not game_over:  # game loop
+def reset():
+    global level, cur_screen_pos, can_jump, bird_pos_x, bird_pos_y, bird_vel,\
+        score, game_over, bird_anim_frame
+    level = [empty] * START_SPACE + [el for _ in range(NUM_PIPES)
+                                     for el in pipe_and_space()]
+    level = transpose(transpose(level) + art.ground(len(level)))
+    cur_screen_pos = 0
+    can_jump = True
+    bird_pos_x = 4
+    bird_pos_y = round(PIPE_HEIGHT / 2)
+    bird_vel = 0
+    score = 0
+    game_over = False
+    bird_anim_frame = 0
+
+reset()
+
+
+while True:  # game loop
     # jumping, only apply when key is pressed, then ignore until released
     shift_pressed = win32api.GetKeyState(win32con.VK_SHIFT) < 0  # -127 or -128
-    if shift_pressed and can_jump:
+    if shift_pressed and can_jump and not game_over:
         can_jump = False
         bird_vel += JUMP_ACCEL
+    elif shift_pressed and game_over:
+        reset()
     elif not shift_pressed:
         can_jump = True
 
     # update bird vertical velocity and position
-    bird_vel = min(MAX_JUMP_VEL, bird_vel + GRAVITY_ACCEL * dt)
-    bird_pos_y -= bird_vel * dt
+    bird_vel = min(MAX_JUMP_VEL, bird_vel + GRAVITY_ACCEL * DT)
+    bird_pos_y -= bird_vel * DT
 
     bird_pos_y_int = int(round(bird_pos_y))
 
@@ -108,15 +119,17 @@ while not game_over:  # game loop
     screen_slice = level[cur_screen_pos:cur_screen_pos + SCREEN_WIDTH]
     transposed = transpose(screen_slice)
 
-    collider = transposed[bird_pos_y_int][bird_pos_x]
-
     # check if bird hit something
-    if collider != ' ':
-        print 'Game Over! (hit pipe)'
-        game_over = True
+    for y in range(bird_pos_y_int, bird_pos_y_int + 1):
+        for x in range(bird_pos_x, bird_pos_x + 5):
+            if transposed[y][x] != ' ':
+                print 'Game Over! (hit pipe)'
+                game_over = True
 
     # draw bird
-    if cur_screen_pos % 5 == 0:
+    if game_over:
+        bird_anim_frame = 2
+    elif cur_screen_pos % 5 == 0:
         bird_anim_frame = (bird_anim_frame + 1) % 2
     draw(transposed, art.bird[bird_anim_frame], bird_pos_x, bird_pos_y_int)
 
@@ -136,7 +149,8 @@ while not game_over:  # game loop
     set_text(text_area, data)
 
     # scroll level
-    cur_screen_pos += 1
+    if not game_over:
+        cur_screen_pos += 1
 
 
     if process.poll() == 0:
@@ -145,4 +159,4 @@ while not game_over:  # game loop
     elif cur_screen_pos + SCREEN_WIDTH >= len(level):
         print 'Reached end of level'
         break
-    time.sleep(dt)
+    time.sleep(DT)
