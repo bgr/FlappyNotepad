@@ -6,15 +6,16 @@ import subprocess
 import random
 
 
-PIPE_HEIGHT = 50   # lines of text
-PIPE_WIDTH = 4     # characters
-PIPE_SPACING = 33  # characters
-GAP_PERCENT = 0.3  # percentage of pipe height
-SCROLL_SPEED = 4   # character per second
-SCREEN_WIDTH = 80  # characters
-GRAVITY_ACCEL = -62
+PIPE_HEIGHT = 50    # lines of text
+PIPE_WIDTH = 4      # characters
+PIPE_SPACING = 33   # characters
+GAP_PERCENT = 0.22  # percentage of pipe height
+SCREEN_WIDTH = 80   # characters
+START_SPACE = 42    # characters
+GRAVITY_ACCEL = -66
 JUMP_ACCEL = 32
 MAX_JUMP_VEL = 40
+NUM_PIPES = 9999
 
 
 process = subprocess.Popen('Notepad.exe')
@@ -41,9 +42,17 @@ notepad = game_window[0]
 def set_text(hwnd, text):
     win32api.SendMessage(hwnd, win32con.WM_SETTEXT, 0, text)
 
-# set window title and bring it to front
-set_text(notepad, "Flappy Notepad".center(200))
+# set window title, bring it to front
+set_text(notepad, "Flappy - Notepad")
 win32gui.ShowWindow(notepad, win32con.SW_SHOWNORMAL)
+# resize and center
+monitor_width = win32api.GetSystemMetrics(0)
+monitor_height = win32api.GetSystemMetrics(1)
+win_width = SCREEN_WIDTH * 8 + 30
+win_height = PIPE_HEIGHT * 14 + 40
+win_x = (monitor_width - win_width) / 2
+win_y = (monitor_height - win_height) / 2
+win32gui.SetWindowPos(notepad, None, win_x, win_y, win_width, win_height, 0)
 
 # notepad's text area is the first child of the window
 text_area = win32gui.FindWindowEx(notepad, None, None, None)
@@ -80,40 +89,85 @@ def transpose(grid):
     return [column(grid, i) for i in range(len(grid[0]))]
 
 
+def draw(screen, data, x, y, transparent=True):
+    for dy, row in enumerate(data, y):
+        for dx, px in enumerate(row, x):
+            if not transparent or px  != ' ':
+                screen[dy][dx] = px
 
-level = [empty] * 42 + [el for _ in range(9999) for el in pipe_and_space()]
+
+def add_border(text, space=(1, 1)):
+    sp_x, sp_y = space
+    center = '{space}{text}{space}'.format(space=(' ' * sp_x), text=text)
+    top = [' ' + ('_' * len(center)) + ' ']
+    mid = ['|' + (' ' * len(center)) + '|'] * sp_y
+    bot = [' ' + (chr(175) * len(center)) + ' ']
+    return top + mid + ['|{0}|'.format(center)] + mid + bot
+
+
+
+level = [empty] * START_SPACE + [el for _ in range(NUM_PIPES)
+                                 for el in pipe_and_space()]
 cur_screen_pos = 0
 can_jump = True
 bird_pos_x = 4
 bird_pos_y = round(PIPE_HEIGHT / 2)
 bird_vel = 0
 dt = 0.033
+score = 0
+game_over = False
 
-while True:  # game loop
+while not game_over:  # game loop
+    # jumping, only apply when key is pressed, then ignore until released
     shift_pressed = win32api.GetKeyState(win32con.VK_SHIFT) < 0  # -127 or -128
     if shift_pressed and can_jump:
-        print 'Jump!'
         can_jump = False
         bird_vel += JUMP_ACCEL
     elif not shift_pressed:
         can_jump = True
 
+    # update bird vertical velocity and position
     bird_vel = min(MAX_JUMP_VEL, bird_vel + GRAVITY_ACCEL * dt)
     bird_pos_y -= bird_vel * dt
 
+    bird_pos_y_int = int(round(bird_pos_y))
+
+    # check if bird hit ground or ceiling
+    if bird_pos_y_int >= PIPE_HEIGHT or bird_pos_y_int <= 0:
+        print 'Game Over! (out of bounds)'
+        game_over = True
+        bird_pos_y_int = min(PIPE_HEIGHT - 1, max(0, bird_pos_y_int))
+
+
+    # take part of the level to display
     screen_slice = level[cur_screen_pos:cur_screen_pos + SCREEN_WIDTH]
     transposed = transpose(screen_slice)
 
-    bird_pos_y_int = int(round(bird_pos_y))
     collider = transposed[bird_pos_y_int][bird_pos_x]
 
-    if collider != ' ' or bird_pos_y_int >= PIPE_HEIGHT:
-        print 'Game Over!'
-        break
+    # check if bird hit something
+    if collider != ' ':
+        print 'Game Over! (hit pipe)'
+        game_over = True
 
-    transposed[bird_pos_y_int][bird_pos_x] = 'O'
+    # draw bird
+    draw(transposed, [['O']], bird_pos_x, bird_pos_y_int)
+
+    # display score
+    cur_segment = max(
+        0, (cur_screen_pos - START_SPACE) / (PIPE_WIDTH + PIPE_SPACING) + 1)
+    if cur_segment != score:
+        score = cur_segment
+        print score
+    score_text = add_border('Score: {}'.format(str(score).zfill(4)))
+    draw(transposed, score_text,
+         SCREEN_WIDTH - len(score_text[0]) - 5, 2, False)
+
+    # render to notepad
     data = '\r\n'.join(''.join(row) for row in transposed)
     set_text(text_area, data)
+
+    # scroll level
     cur_screen_pos += 1
 
 
