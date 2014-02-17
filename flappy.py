@@ -4,6 +4,8 @@ import win32con
 import time
 import subprocess
 import random
+import art
+from util import transpose, draw, add_border
 
 
 PIPE_HEIGHT = 50    # lines of text
@@ -33,8 +35,8 @@ game_window = [hwnd for hwnd, title in windows.items()
 
 if not game_window:
     raise Exception("Notepad must be running")
-if len(game_window) > 1:
-    raise Exception("Multiple Notepads seem to be running")
+#if len(game_window) > 1:
+    #raise Exception("Multiple Notepads seem to be running")
 
 notepad = game_window[0]
 
@@ -81,31 +83,6 @@ def pipe_and_space():
     return pipe(GAP_PERCENT, PIPE_WIDTH, PIPE_HEIGHT) + [empty] * PIPE_SPACING
 
 
-def column(grid, col_num):
-    return [row[col_num] for row in grid]
-
-
-def transpose(grid):
-    return [column(grid, i) for i in range(len(grid[0]))]
-
-
-def draw(screen, data, x, y, transparent=True):
-    for dy, row in enumerate(data, y):
-        for dx, px in enumerate(row, x):
-            if not transparent or px  != ' ':
-                screen[dy][dx] = px
-
-
-def add_border(text, space=(1, 1)):
-    sp_x, sp_y = space
-    center = '{space}{text}{space}'.format(space=(' ' * sp_x), text=text)
-    top = [' ' + ('_' * len(center)) + ' ']
-    mid = ['|' + (' ' * len(center)) + '|'] * sp_y
-    bot = [' ' + (chr(175) * len(center)) + ' ']
-    return top + mid + ['|{0}|'.format(center)] + mid + bot
-
-
-
 level = [empty] * START_SPACE + [el for _ in range(NUM_PIPES)
                                  for el in pipe_and_space()]
 cur_screen_pos = 0
@@ -116,6 +93,8 @@ bird_vel = 0
 dt = 0.033
 score = 0
 game_over = False
+bird_anim_frame = 0
+
 
 while not game_over:  # game loop
     # jumping, only apply when key is pressed, then ignore until released
@@ -151,7 +130,9 @@ while not game_over:  # game loop
         game_over = True
 
     # draw bird
-    draw(transposed, [['O']], bird_pos_x, bird_pos_y_int)
+    if cur_screen_pos % 5 == 0:
+        bird_anim_frame = (bird_anim_frame + 1) % 2
+    draw(transposed, art.bird[bird_anim_frame], bird_pos_x, bird_pos_y_int)
 
     # display score
     cur_segment = max(
