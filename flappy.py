@@ -14,7 +14,7 @@ PIPE_GAP = 13
 SCREEN_WIDTH = 80
 SCREEN_HEIGHT = PIPE_HEIGHT + 4
 START_SPACE = 47
-LEAD_IN = 135
+SPLASH_LENGTH = 135
 GRAVITY_ACCEL = -155
 JUMP_ACCEL = 50
 MAX_JUMP_VEL = 50
@@ -74,7 +74,7 @@ def pipe_and_space(top_height=None):
 
 
 level = cur_screen_pos = bird_pos_x = bird_pos_y = bird_vel =\
-    score = game_over = bird_anim_frame = None
+    score = game_over = bird_anim_frame = lead_in = None
 
 first_run = True
 
@@ -99,7 +99,7 @@ def keycheck():
 
 def reset():
     global level, cur_screen_pos, bird_pos_x, bird_pos_y, bird_vel,\
-        score, game_over, bird_anim_frame, show_readme
+        score, game_over, bird_anim_frame, show_readme, lead_in
 
     cur_screen_pos = 0
     bird_pos_x = BIRD_X_POS
@@ -108,6 +108,7 @@ def reset():
     score = 0
     game_over = False
     bird_anim_frame = 0
+    lead_in = START_SPACE
 
     # make first pipe have a gap in the middle
     middle = (PIPE_HEIGHT - PIPE_GAP) / 2
@@ -135,6 +136,7 @@ def reset():
                  transpose(logo) +
                  level)
         bird_pos_x += SCREEN_WIDTH + len(logo[0]) + 7
+        lead_in += len(logo[0]) + len(readme[0]) + 5
 
 
 reset()
@@ -164,7 +166,7 @@ while True:  # game loop
     bird_vel = min(MAX_JUMP_VEL, bird_vel + GRAVITY_ACCEL * DT)
     bird_pos_y -= bird_vel * DT
 
-    if (first_run and cur_screen_pos < LEAD_IN
+    if (first_run and cur_screen_pos < SPLASH_LENGTH
             and bird_pos_y > PIPE_HEIGHT / 2 + 2):
         bird_vel += JUMP_ACCEL
 
@@ -185,7 +187,7 @@ while True:  # game loop
     screen = transpose(screen_slice)
 
     # check if bird hit something
-    if not first_run or cur_screen_pos > LEAD_IN:
+    if not first_run or cur_screen_pos > SPLASH_LENGTH:
         for y in range(bird_pos_y_int, bird_pos_y_int + 1):
             for x in range(bird_pos_x, bird_pos_x + 5):
                 if screen[y][x] != ' ':
@@ -202,12 +204,12 @@ while True:  # game loop
     # display score
     cur_segment = max(
         0,
-        (cur_screen_pos - LEAD_IN) / (art.PIPE_WIDTH + PIPE_SPACING) + 1
+        (cur_screen_pos - lead_in) / (art.PIPE_WIDTH + PIPE_SPACING) + 1
     )
     if cur_segment != score:
         score = cur_segment
     score_text = art.score(score)
-    if not first_run or cur_screen_pos > LEAD_IN:
+    if not first_run or cur_screen_pos > SPLASH_LENGTH:
         draw(screen, score_text, (SCREEN_WIDTH - len(score_text[0])) / 2, 2)
 
     if game_over:
