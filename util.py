@@ -9,7 +9,8 @@ def transpose(grid):
 def draw(screen, data, x, y):
     for dy, row in enumerate(data, y):
         for dx, px in enumerate(row, x):
-            screen[dy][dx] = px
+            if dy < len(screen) and dx < len(screen[dy]):
+                screen[dy][dx] = px
 
 
 def add_border(text, space=(1, 1)):

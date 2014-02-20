@@ -1,15 +1,17 @@
 logo = [
-    ' ____ _ ____                  ____ _        _ ',
-    '|  __| |__  |____ ___ __ __  | ,  |_|--- __| |',
-    '|  __| |    |    |   |  |  | |   <| | |_|    |',
-    '| |  | |  , |  | |  ||  |  | | ,  | | | | |  |',
-    '|_|  |_|____|  __|  _|___  | |____|_|_| |____|',
-    '            |_|  |_|   |___|                  ',
+    ' ____ _ ____                  _  _     _  ____      ____    _ ',
+    '|  __l l__  l____ ___ __ __  | \| l___| l|  , l____|__  l__| l',
+    '|  __l |    |    l   l  l  l |    |   |  l    |    l    |    |',
+    '| |  | |  , |  | |  ||  |  | |    | | | |_  __|  | |  , | |  |',
+    '|_|  |_|____|  __|  _|___  | |_|\_|___|___l___|  __|____|____|',
+    '            |_|  |_|   |___|                  |_|             ',
+    '                                                              ',
+    '                      TAP THAT SHIFT                          ',
 ]
 
 game_over = [
     ' ___ ____        ____    ___     ____     ',
-    '|  _|__  |------|  , |  |   |- -|  , |--- ',
+    '|  _l__  l------|  , l  |   l- -|  , l--- ',
     '| | |    | ,  , |    |  | | | | |    | |_|',
     '| | |  , | |  | |  __|  | | | ` |  __| |  ',
     '|___|____|_|__|_|____|  |___|\_/|____|_|  ',
@@ -167,3 +169,39 @@ def ground(length):
     many = one * (length / len(one) + 1)
     assert len(many) >= length
     return transpose(many[:length])
+
+
+readme = \
+"""Flappy Notepad - Readme
+=======================
+
+               YOU MUST DO THIS TO PLAY:
+
+1. disable Format > Word Wrap
+2. set font back to default (Format > Font, Lucida Console - Regular - 10)
+
+
+when you're done with that, press "Shift" on your keyboard
+
+
+
+FAQ
+===
+
+Q: game flickers too much!
+A: try disabling fancy Windows effects - open Run menu (press Win+R on keyboard)
+   type in "net stop uxsms", then when you're done playing do "net start uxsms"
+
+Q: how do I take a screenshot of the game?
+A: press Ctrl-A, then Ctrl-C
+
+
+Credits
+=======
+
+inspired by Flappy Bird
+made during Flappy Jam (http://itch.io/jam/flappyjam)
+code at https://github.com/bgr/FlappyNotepad
+by bgr"""
+
+readme = [ln.ljust(80) for ln in readme.splitlines()]
